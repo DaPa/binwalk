@@ -13,7 +13,7 @@ set -o nounset
 REQUIRED_UTILS="wget tar python"
 APTCMD="apt-get"
 YUMCMD="yum"
-APT_CANDIDATES="git build-essential libqt4-opengl mtd-utils gzip bzip2 tar arj lhasa p7zip p7zip-full cabextract cramfsprogs cramfsswap squashfs-tools zlib1g-dev liblzma-dev liblzo2-dev sleuthkit openjdk-7-jdk"
+APT_CANDIDATES="git build-essential libqt4-opengl mtd-utils gzip bzip2 tar arj lhasa p7zip p7zip-full cabextract cramfsprogs cramfsswap squashfs-tools zlib1g-dev liblzma-dev liblzo2-dev sleuthkit openjdk-8-jdk"
 PYTHON2_APT_CANDIDATES="python-crypto python-lzo python-lzma python-pip python-opengl python-qt4 python-qt4-gl python-numpy python-scipy"
 PYTHON3_APT_CANDIDATES="python3-crypto python3-pip python3-opengl python3-pyqt4 python3-pyqt4.qtopengl python3-numpy python3-scipy"
 PYTHON3_YUM_CANDIDATES=""
@@ -34,51 +34,58 @@ fi
 
 function install_yaffshiv
 {
-    git clone https://github.com/devttys0/yaffshiv
+    git clone git@github.com:DaPa/yaffshiv.git
     (cd yaffshiv && $SUDO python2 setup.py install)
-    $SUDO rm -rf yaffshiv
+    #$SUDO rm -rf yaffshiv
 }
 
 function install_sasquatch
 {
-    git clone https://github.com/devttys0/sasquatch
+    git clone git@github.com:DaPa/sasquatch.git
     (cd sasquatch && $SUDO ./build.sh)
-    $SUDO rm -rf sasquatch
+    #$SUDO rm -rf sasquatch
 }
 
 function install_jefferson
 {
     install_pip_package cstruct
-    git clone https://github.com/sviehb/jefferson
+    git clone git@github.com:DaPa/jefferson.git
     (cd jefferson && $SUDO python2 setup.py install)
-    $SUDO rm -rf jefferson
+    #$SUDO rm -rf jefferson
 }
 
 function install_unstuff
 {
     mkdir -p /tmp/unstuff
     cd /tmp/unstuff
-    wget -O - http://my.smithmicro.com/downloads/files/stuffit520.611linux-i386.tar.gz | tar -zxv
+    if [ ! -e bin/unstuff ]
+    then
+        #wget -O - http://my.smithmicro.com/downloads/files/stuffit520.611linux-i386.tar.gz | tar -zxv
+        wget -O - http://mirror.sobukus.de/files/grimoire/z-archive/stuffit520.611linux-i386.tar.gz | tar -zxv
+    fi
+
     $SUDO cp bin/unstuff /usr/local/bin/
     cd -
-    rm -rf /tmp/unstuff
+    #rm -rf /tmp/unstuff
 }
 
 function install_ubireader
 {
-    git clone https://github.com/jrspruitt/ubi_reader
+    git clone --quiet --depth 1 --branch "v0.8.5-master" git@github.com:DaPa/ubi_reader.git
     (cd ubi_reader && $SUDO python setup.py install)
-    $SUDO rm -rf ubi_reader
+    #$SUDO rm -rf ubi_reader
 }
 
 function install_pip_package
 {
+    echo "install_pip_package $1 entry"
     PACKAGE="$1"
 
     for PIP_COMMAND in $PIP_COMMANDS
     do
         $SUDO $PIP_COMMAND install $PACKAGE
     done
+    echo "install_pip_package $1 exit"
 }
 
 function find_path
@@ -163,13 +170,25 @@ then
 fi
 
 # Do the install(s)
-cd /tmp
+mkdir ~/tmp
+cd ~/tmp
 $SUDO $PKGCMD $PKGCMD_OPTS $PKG_CANDIDATES
 if [ $? -ne 0 ]
     then
     echo "Package installation failed: $PKG_CANDIDATES"
     exit 1
 fi
+
+# in ubuntu 16.04.6.x32 this needed older pip, see:
+# https://stackoverflow.com/questions/65900292/how-can-i-install-a-legacy-pip-version-with-python-2-6-6-or-python-2-7-5
+# $ curl -fsSL -O https://bootstrap.pypa.io/pip/2.7/get-pip.py
+# $ python get-pip.py --no-python-version-warning && rm -f get-pip.py
+# $ python -m pip --version
+# $ curl -fsSL -O https://bootstrap.pypa.io/pip/3.5/get-pip.py
+# $ python3 get-pip.py --no-python-version-warning && rm -f get-pip.py
+# $ python3 -m pip --version
+
+
 install_pip_package pyqtgraph
 install_pip_package capstone
 install_sasquatch
